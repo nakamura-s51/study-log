@@ -33,9 +33,10 @@
       <article class="summary-item summary-today">
         <p class="summary-label">今日</p>
         <p id="todayTotal" class="summary-value">0時間</p>
+        <p id="dailyGoalText" class="streak-message" hidden></p>
       </article>
       <article class="summary-item summary-week">
-        <p class="summary-label">今週 <span>月曜から今日まで</span></p>
+        <p class="summary-label">今週 <span id="weekRangeLabel">月曜から今日まで</span></p>
         <p id="weekTotal" class="summary-value">0時間</p>
       </article>
       <article class="summary-item summary-month">
@@ -146,7 +147,7 @@
             <button id="nextMonth" type="button" aria-label="次の月">›</button>
           </div>
         </div>
-        <div class="weekday-row" aria-hidden="true">
+        <div id="weekdayRow" class="weekday-row" aria-hidden="true">
           <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
         </div>
         <div id="calendarGrid" class="calendar-grid" aria-label="学習日カレンダー"></div>
@@ -250,6 +251,46 @@
       </div>
 
       <form id="settingsForm" class="settings-form">
+        <section class="settings-group" aria-labelledby="studySettingsTitle">
+          <h3 id="studySettingsTitle">学習</h3>
+          <div class="settings-fields study-settings-fields">
+            <div class="field">
+              <label for="dailyGoalInput">1日の目標</label>
+              <div class="settings-number"><input id="dailyGoalInput" type="number" min="0" max="1440" step="5" required><span>分</span></div>
+            </div>
+            <div class="field">
+              <label for="settingsWeeklyGoalInput">1週間の目標</label>
+              <div class="settings-number"><input id="settingsWeeklyGoalInput" type="number" min="1" max="168" step="0.5" required><span>時間</span></div>
+            </div>
+            <div class="field">
+              <label for="weekStartSelect">週の始まり</label>
+              <select id="weekStartSelect">
+                <option value="monday">月曜日</option>
+                <option value="sunday">日曜日</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="settingsExamNameInput">試験名</label>
+              <input id="settingsExamNameInput" type="text" maxlength="40" placeholder="例：MOS">
+            </div>
+            <div class="field">
+              <label for="settingsExamDateInput">試験日・締め切り</label>
+              <input id="settingsExamDateInput" type="date">
+            </div>
+          </div>
+          <p class="settings-help settings-help-after">1日の目標を 0 分にすると、今日の目標は表示されません。</p>
+
+          <h4 class="settings-subtitle">科目</h4>
+          <p class="settings-help">入力の候補と、グラフの色に使われます。名前を変えると、これまでの記録の科目名も変わります。</p>
+          <ul id="subjectSettingsList" class="subject-settings-list" aria-label="科目の一覧"></ul>
+          <div class="subject-add-row">
+            <input id="newSubjectColor" type="color" value="#6c9895" aria-label="新しい科目の色">
+            <input id="newSubjectName" type="text" maxlength="40" placeholder="新しい科目（例：Python）" aria-label="新しい科目の名前">
+            <button id="addSubjectButton" class="secondary-button" type="button">追加</button>
+          </div>
+          <p id="subjectMessage" class="form-message" aria-live="polite"></p>
+        </section>
+
         <section class="settings-group" aria-labelledby="timerSettingsTitle">
           <h3 id="timerSettingsTitle">タイマー</h3>
           <div class="settings-fields timer-settings-fields">

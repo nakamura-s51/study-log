@@ -293,6 +293,7 @@ button {
 .settings-number span {
   color: var(--muted);
   font-size: 11px;
+  white-space: nowrap;
 }
 
 .settings-toggle {
@@ -308,6 +309,93 @@ button {
   width: 16px;
   height: 16px;
   accent-color: var(--main);
+}
+
+/* ===== 設定：学習（目標・週の始まり・科目） ===== */
+.study-settings-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-fields .field > input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--input-surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.settings-help-after {
+  margin: 10px 0 0;
+}
+
+.settings-subtitle {
+  margin: 18px 0 8px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.subject-settings-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.subject-settings-item,
+.subject-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subject-settings-item input[type="text"],
+.subject-add-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--input-surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+/* 色を選ぶ四角いボタン */
+.subject-settings-item input[type="color"],
+.subject-add-row input[type="color"] {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--input-surface);
+  cursor: pointer;
+}
+
+.subject-settings-item .secondary-button,
+.subject-add-row .secondary-button {
+  flex: none;
+  min-height: 36px;
+}
+
+/* グラフの科目名の前に付ける色の丸 */
+.subject-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
 }
 
 .settings-actions {
@@ -1324,8 +1412,15 @@ h1 {
 
   /* iPhone は文字が 16px より小さい欄をタップすると画面を拡大するので、16px にする */
   .field input,
-  .field textarea {
+  .field textarea,
+  .settings-fields select,
+  .subject-settings-item input[type="text"],
+  .subject-add-row input[type="text"] {
     font-size: 16px;
+  }
+
+  .study-settings-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .timer-panel {

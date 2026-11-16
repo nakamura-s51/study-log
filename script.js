@@ -43,6 +43,53 @@ const timerDisplay = document.getElementById("timerDisplay");
 const timerStatus = document.getElementById("timerStatus");
 const startTimerButton = document.getElementById("startTimerButton");
 const stopTimerButton = document.getElementById("stopTimerButton");
+const dailyGoalInput = document.getElementById("dailyGoalInput");
+const settingsWeeklyGoalInput = document.getElementById("settingsWeeklyGoalInput");
+const weekStartSelect = document.getElementById("weekStartSelect");
+const settingsExamNameInput = document.getElementById("settingsExamNameInput");
+const settingsExamDateInput = document.getElementById("settingsExamDateInput");
+const subjectSettingsList = document.getElementById("subjectSettingsList");
+const newSubjectColor = document.getElementById("newSubjectColor");
+const newSubjectName = document.getElementById("newSubjectName");
+const addSubjectButton = document.getElementById("addSubjectButton");
+const subjectMessage = document.getElementById("subjectMessage");
+
+// 重ならない ID を作ります（科目や ToDo で使います）。
+function makeId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// 最初から用意しておく科目と色です。
+const defaultSubjects = [
+  { name: "JavaScript", color: "#d9a03a" },
+  { name: "Excel", color: "#2f855a" },
+  { name: "Spring", color: "#6c9895" },
+  { name: "HTML/CSS", color: "#d1603d" },
+  { name: "Python", color: "#3b6ea5" }
+];
+
+// 科目の一覧を確認して、正しい形にそろえます（名前の重なりや空の名前は取り除く）。
+function normalizeSubjects(subjectList) {
+  if (!Array.isArray(subjectList)) {
+    return null;
+  }
+  const usedNames = new Set();
+  return subjectList
+    .filter((subject) => subject && typeof subject.name === "string" && subject.name.trim())
+    .map((subject) => ({
+      id: String(subject.id || makeId()),
+      name: subject.name.trim().slice(0, 40),
+      color: /^#[0-9a-f]{6}$/i.test(subject.color) ? subject.color : "#6c9895"
+    }))
+    .filter((subject) => {
+      const key = subject.name.toLowerCase();
+      if (usedNames.has(key)) {
+        return false;
+      }
+      usedNames.add(key);
+      return true;
+    });
+}
 
 // 今表示しているカレンダーの月を、今月にします。
 const currentDate = new Date();
@@ -54,7 +101,10 @@ let settings = {
   breakMinutes: 5,
   soundEnabled: false,
   theme: localStorage.getItem(themeStorageKey) || "ocean",
-  textSize: "medium"
+  textSize: "medium",
+  dailyGoalMinutes: 60,
+  weekStart: "monday",
+  subjects: null
 };
 try {
   const savedSettings = JSON.parse(localStorage.getItem(settingsStorageKey));
@@ -69,6 +119,17 @@ settings.breakMinutes = Number.isFinite(settings.breakMinutes) ? Math.min(60, Ma
 settings.soundEnabled = Boolean(settings.soundEnabled);
 settings.theme = ["ocean", "sage", "night", "system"].includes(settings.theme) ? settings.theme : "ocean";
 settings.textSize = ["small", "medium", "large"].includes(settings.textSize) ? settings.textSize : "medium";
+const subjectsWereSaved = Array.isArray(settings.subjects);
+normalizeStudySettings();
+
+// 学習の設定（1日の目標・週の始まり・科目）を確認して、正しい形にそろえます。
+function normalizeStudySettings() {
+  const dailyGoal = Number(settings.dailyGoalMinutes);
+  settings.dailyGoalMinutes = Number.isFinite(dailyGoal) ? Math.min(1440, Math.max(0, Math.round(dailyGoal))) : 60;
+  settings.weekStart = settings.weekStart === "sunday" ? "sunday" : "monday";
+  settings.subjects = normalizeSubjects(settings.subjects)
+    || defaultSubjects.map((subject) => ({ ...subject, id: makeId() }));
+}
 
 focusMinutesInput.value = String(settings.focusMinutes);
 breakMinutesInput.value = String(settings.breakMinutes);
@@ -102,6 +163,16 @@ try {
   }
 } catch (error) {
   records = [];
+}
+
+// 科目の一覧をまだ保存していないときは、これまでの記録に出てくる科目も一覧に加えます。
+if (!subjectsWereSaved) {
+  records.forEach((record) => {
+    const exists = settings.subjects.some((subject) => subject.name.toLowerCase() === record.subject.toLowerCase());
+    if (!exists) {
+      settings.subjects.push({ id: makeId(), name: record.subject, color: "#8a9a97" });
+    }
+  });
 }
 
 // 目標とToDoも、記録とは別の名前でlocalStorageへ保存します。
@@ -204,8 +275,93 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
   }
 });
 
+// 設定画面で編集中の科目一覧です。「設定を保存」を押すまでは本物の一覧を変えません。
+let draftSubjects = [];
+
+// 科目の一覧を、設定画面に並べます（色・名前・削除ボタン）。
+function renderSubjectSettings() {
+  subjectSettingsList.innerHTML = "";
+  draftSubjects.forEach((subject) => {
+    const item = document.createElement("li");
+    item.className = "subject-settings-item";
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.value = subject.color;
+    colorInput.setAttribute("aria-label", `${subject.name}の色`);
+    colorInput.addEventListener("input", () => {
+      subject.color = colorInput.value;
+    });
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.maxLength = 40;
+    nameInput.value = subject.name;
+    nameInput.setAttribute("aria-label", "科目の名前");
+    nameInput.addEventListener("input", () => {
+      subject.name = nameInput.value;
+    });
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "secondary-button subject-remove-button";
+    removeButton.textContent = "削除";
+    removeButton.setAttribute("aria-label", `${subject.name}を一覧から削除`);
+    removeButton.addEventListener("click", () => {
+      draftSubjects = draftSubjects.filter((itemToKeep) => itemToKeep.id !== subject.id);
+      subjectMessage.textContent = "一覧から外しました（これまでの記録は消えません）";
+      renderSubjectSettings();
+    });
+
+    item.append(colorInput, nameInput, removeButton);
+    subjectSettingsList.appendChild(item);
+  });
+}
+
+// 「追加」ボタンで、新しい科目を一覧に加えます。
+addSubjectButton.addEventListener("click", () => {
+  const name = newSubjectName.value.trim();
+  if (!name) {
+    subjectMessage.textContent = "科目の名前を入力してください";
+    newSubjectName.focus();
+    return;
+  }
+  if (draftSubjects.some((subject) => subject.name.trim().toLowerCase() === name.toLowerCase())) {
+    subjectMessage.textContent = "同じ名前の科目がすでにあります";
+    return;
+  }
+  draftSubjects.push({ id: makeId(), name, color: newSubjectColor.value });
+  newSubjectName.value = "";
+  subjectMessage.textContent = `「${name}」を追加しました（保存すると反映されます）`;
+  renderSubjectSettings();
+});
+
+// 入力欄で Enter を押したときも、設定全体ではなく科目の追加にします。
+newSubjectName.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addSubjectButton.click();
+  }
+});
+
+// 設定画面を開くときに、今の設定を入力欄へ入れます。
+function fillStudySettings() {
+  dailyGoalInput.value = String(settings.dailyGoalMinutes);
+  settingsWeeklyGoalInput.value = String(goals.weeklyHours);
+  weekStartSelect.value = settings.weekStart;
+  settingsExamNameInput.value = goals.examName || "";
+  settingsExamDateInput.value = goals.examDate || "";
+  draftSubjects = settings.subjects.map((subject) => ({ ...subject }));
+  subjectMessage.textContent = "";
+  newSubjectName.value = "";
+  renderSubjectSettings();
+}
+
 // 設定ダイアログを開いたり閉じたりします。
-openSettingsButton.addEventListener("click", () => settingsDialog.showModal());
+openSettingsButton.addEventListener("click", () => {
+  fillStudySettings();
+  settingsDialog.showModal();
+});
 closeSettingsButton.addEventListener("click", () => settingsDialog.close());
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) {
@@ -216,17 +372,66 @@ settingsDialog.addEventListener("click", (event) => {
 // 設定を保存して、タイマーや見た目へ反映します。
 settingsForm.addEventListener("submit", (event) => {
   event.preventDefault();
+
+  // 科目の名前が空っぽ・重なっていないかを確かめます。
+  const subjectNames = draftSubjects.map((subject) => subject.name.trim());
+  if (subjectNames.some((name) => !name)) {
+    subjectMessage.textContent = "名前が空っぽの科目があります";
+    return;
+  }
+  const lowerNames = subjectNames.map((name) => name.toLowerCase());
+  if (new Set(lowerNames).size !== lowerNames.length) {
+    subjectMessage.textContent = "同じ名前の科目が2つあります";
+    return;
+  }
+
+  // 名前を変えた科目は、これまでの記録の科目名も新しい名前に変えます。
+  let recordsChanged = false;
+  draftSubjects.forEach((subject) => {
+    const before = settings.subjects.find((oldSubject) => oldSubject.id === subject.id);
+    const newName = subject.name.trim();
+    if (before && before.name !== newName) {
+      records.forEach((record) => {
+        if (record.subject === before.name) {
+          record.subject = newName;
+          recordsChanged = true;
+        }
+      });
+    }
+  });
+
   settings = {
     focusMinutes: Number(focusMinutesInput.value),
     breakMinutes: Number(breakMinutesInput.value),
     soundEnabled: timerSoundInput.checked,
     theme: themeSelect.value,
-    textSize: textSizeSelect.value
+    textSize: textSizeSelect.value,
+    dailyGoalMinutes: Number(dailyGoalInput.value),
+    weekStart: weekStartSelect.value,
+    subjects: draftSubjects.map((subject) => ({ ...subject, name: subject.name.trim() }))
   };
+  normalizeStudySettings();
   localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
   localStorage.setItem(themeStorageKey, settings.theme);
+
+  // 1週間の目標と試験日は、「目標と試験日」と同じデータに保存します。
+  goals = {
+    weeklyHours: Number(settingsWeeklyGoalInput.value),
+    examName: settingsExamNameInput.value.trim(),
+    examDate: settingsExamDateInput.value
+  };
+  localStorage.setItem(goalStorageKey, JSON.stringify(goals));
+  weeklyGoalInput.value = String(goals.weeklyHours);
+  examNameInput.value = goals.examName;
+  examDateInput.value = goals.examDate;
+
+  if (recordsChanged) {
+    saveRecords();
+  }
   applyTheme(settings.theme);
   applyTextSize(settings.textSize);
+  renderSubjectOptions();
+  renderRecords();
   settingsMessage.textContent = "設定を保存しました";
   settingsDialog.close();
 });
@@ -482,12 +687,46 @@ function restoreTimer() {
   timerInterval = window.setInterval(renderTimerDisplay, 250);
 }
 
-// 今週の月曜日の日付を返します。
+// 週の始まりの曜日の番号です（日曜 = 0、月曜 = 1）。
+function getWeekStartDay() {
+  return settings.weekStart === "sunday" ? 0 : 1;
+}
+
+// 今週の始まりの日（月曜日 または 日曜日）の日付を返します。
 function getWeekStartText(date = new Date()) {
-  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const daysSinceMonday = (monday.getDay() + 6) % 7;
-  monday.setDate(monday.getDate() - daysSinceMonday);
-  return toDateText(monday);
+  const weekStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysSinceStart = (weekStart.getDay() - getWeekStartDay() + 7) % 7;
+  weekStart.setDate(weekStart.getDate() - daysSinceStart);
+  return toDateText(weekStart);
+}
+
+// 科目の名前から、設定した色を探します。見つからないときは null です。
+function getSubjectColor(subjectName) {
+  const subject = settings.subjects.find((item) => item.name.toLowerCase() === subjectName.toLowerCase());
+  return subject ? subject.color : null;
+}
+
+// 記録の入力欄に出る科目の候補を、設定した科目一覧から作ります。
+function renderSubjectOptions() {
+  const options = document.getElementById("subjectOptions");
+  options.innerHTML = "";
+  settings.subjects.forEach((subject) => {
+    const option = document.createElement("option");
+    option.value = subject.name;
+    options.appendChild(option);
+  });
+}
+
+// カレンダーの曜日の見出しを、週の始まりに合わせて並べます。
+function renderWeekdayRow() {
+  const weekdayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const weekdayRow = document.getElementById("weekdayRow");
+  weekdayRow.innerHTML = "";
+  for (let index = 0; index < 7; index += 1) {
+    const name = document.createElement("span");
+    name.textContent = weekdayNames[(getWeekStartDay() + index) % 7];
+    weekdayRow.appendChild(name);
+  }
 }
 
 // 記録を日付ごとに合計し、科目別の棒グラフを作ります。
@@ -511,10 +750,17 @@ function renderSubjectChart() {
     const row = document.createElement("div");
     row.className = "subject-row";
 
+    const color = getSubjectColor(subjectName);
     const label = document.createElement("div");
     label.className = "subject-row-label";
     const name = document.createElement("strong");
-    name.textContent = subjectName;
+    if (color) {
+      const dot = document.createElement("span");
+      dot.className = "subject-dot";
+      dot.style.background = color;
+      name.appendChild(dot);
+    }
+    name.append(subjectName);
     const duration = document.createElement("span");
     duration.textContent = formatDuration(minutes);
     label.append(name, duration);
@@ -529,6 +775,9 @@ function renderSubjectChart() {
     const bar = document.createElement("span");
     bar.className = "subject-bar";
     bar.style.width = `${(minutes / maximumMinutes) * 100}%`;
+    if (color) {
+      bar.style.background = color;
+    }
     track.appendChild(bar);
     row.append(label, track);
     subjectChart.appendChild(row);
@@ -539,7 +788,9 @@ function renderSubjectChart() {
 function renderCalendar() {
   const year = shownMonth.getFullYear();
   const month = shownMonth.getMonth();
-  const firstWeekday = new Date(year, month, 1).getDay();
+  // 1日の前に空ける枠の数（週の始まりに合わせる）
+  const firstWeekday = (new Date(year, month, 1).getDay() - getWeekStartDay() + 7) % 7;
+  renderWeekdayRow();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthLabel = document.getElementById("calendarMonthLabel");
   monthLabel.textContent = new Intl.DateTimeFormat("ja-JP", {
@@ -728,6 +979,20 @@ function renderTotals() {
   document.getElementById("todayTotal").textContent = formatDuration(todayMinutes);
   document.getElementById("weekTotal").textContent = formatDuration(weekMinutes);
   document.getElementById("monthTotal").textContent = formatDuration(monthMinutes);
+  document.getElementById("weekRangeLabel").textContent = settings.weekStart === "sunday"
+    ? "日曜から今日まで"
+    : "月曜から今日まで";
+
+  // 1日の目標（0分のときは表示しない）
+  const dailyGoalText = document.getElementById("dailyGoalText");
+  const dailyGoal = settings.dailyGoalMinutes;
+  dailyGoalText.hidden = dailyGoal === 0;
+  if (dailyGoal > 0) {
+    const remaining = dailyGoal - todayMinutes;
+    dailyGoalText.textContent = remaining > 0
+      ? `目標 ${formatDuration(dailyGoal)}まで あと ${formatDuration(remaining)}`
+      : "今日の目標を達成しました！";
+  }
   renderStreak();
   renderGoalProgress();
 }
@@ -1035,6 +1300,7 @@ backupFileInput.addEventListener("change", async () => {
       }
       if (backup.settings) {
         settings = { ...settings, ...backup.settings };
+        normalizeStudySettings();
         localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
         localStorage.setItem(themeStorageKey, settings.theme);
       }
@@ -1121,6 +1387,7 @@ document.getElementById("nextMonth").addEventListener("click", () => {
 
 // ページを開いたときに、保存済みの記録と合計を表示します。
 restoreDashboardOrder();
+renderSubjectOptions();
 renderTodos();
 renderRecords();
 restoreTimer();
