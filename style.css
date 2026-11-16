@@ -698,6 +698,32 @@ h1 {
   font-size: 12px;
 }
 
+/* iPhone の Safari では日付の欄だけ見た目が変わるので、ほかの欄とそろえる */
+.field input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  text-align: left;
+  line-height: 20px;
+}
+
+.field input[type="date"]::-webkit-date-and-time-value {
+  margin: 0;
+  text-align: left;
+}
+
+/* 数字の欄の、右はしの上下ボタン（▲▼）を消してすっきりさせる */
+.field input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.field input[type="number"]::-webkit-inner-spin-button,
+.field input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .field-memo {
   margin-top: 15px;
 }
@@ -1294,6 +1320,12 @@ h1 {
   .header-tools {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  /* iPhone は文字が 16px より小さい欄をタップすると画面を拡大するので、16px にする */
+  .field input,
+  .field textarea {
+    font-size: 16px;
   }
 
   .timer-panel {
