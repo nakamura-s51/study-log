@@ -529,7 +529,7 @@ function setTimerRunning(isRunning) {
   stopTimerButton.hidden = !isRunning;
   timerStatus.textContent = isRunning
     ? activeTimer.phase === "break" ? "休憩中" : `${activeTimer.subject}を集中計測中`
-    : "科目を入力して計測を開始";
+    : "科目を選んで計測を開始";
   if (isRunning) {
     stopTimerButton.textContent = activeTimer.phase === "break" ? "休憩を終了" : "集中を終了して記録";
   }
@@ -620,7 +620,7 @@ function startTimer() {
   const subject = subjectInput.value.trim();
   if (!subject) {
     // メッセージは画面の下のほうだと見えないので、タイマーの中に表示します。
-    timerStatus.textContent = "先に下の「科目」を入力してください";
+    timerStatus.textContent = "先に下の「科目」を選んでください";
     timerStatus.classList.add("is-warning");
     subjectInput.classList.add("needs-input");
     subjectInput.focus();
@@ -686,6 +686,7 @@ function restoreTimer() {
   }
 
   dateInput.value = activeTimer.date;
+  ensureSubjectOption(activeTimer.subject);
   subjectInput.value = activeTimer.subject;
   memoInput.value = activeTimer.memo || "";
   setTimerRunning(true);
@@ -712,15 +713,40 @@ function getSubjectColor(subjectName) {
   return subject ? subject.color : null;
 }
 
-// 記録の入力欄に出る科目の候補を、設定した科目一覧から作ります。
+// 科目の選択肢の一番下に出す「科目を追加・編集」の目印です。
+const manageSubjectsValue = "__manage-subjects__";
+
+// <option> を1つ作ります。
+function createOption(value, text) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = text;
+  return option;
+}
+
+// 科目の選択肢を、設定で登録した科目一覧から作ります。
 function renderSubjectOptions() {
-  const options = document.getElementById("subjectOptions");
-  options.innerHTML = "";
+  const selected = subjectInput.value;
+  subjectInput.innerHTML = "";
+  subjectInput.appendChild(createOption("", "科目を選んでください"));
   settings.subjects.forEach((subject) => {
-    const option = document.createElement("option");
-    option.value = subject.name;
-    options.appendChild(option);
+    subjectInput.appendChild(createOption(subject.name, subject.name));
   });
+  subjectInput.appendChild(createOption(manageSubjectsValue, "＋ 科目を追加・編集する"));
+
+  // 選んでいた科目が一覧から消えていても、選んだままにしておきます。
+  if (selected && selected !== manageSubjectsValue) {
+    ensureSubjectOption(selected);
+    subjectInput.value = selected;
+  }
+}
+
+// 一覧にない科目（設定から外した科目など）を、選択肢に一時的に加えます。
+function ensureSubjectOption(subjectName) {
+  const exists = [...subjectInput.options].some((option) => option.value === subjectName);
+  if (!exists) {
+    subjectInput.insertBefore(createOption(subjectName, subjectName), subjectInput.lastElementChild);
+  }
 }
 
 // カレンダーの曜日の見出しを、週の始まりに合わせて並べます。
@@ -1074,6 +1100,7 @@ function renderRecords() {
 function startEditing(record) {
   editingId = record.id;
   dateInput.value = record.date;
+  ensureSubjectOption(record.subject);
   subjectInput.value = record.subject;
   durationInput.value = String(record.minutes / 60);
   memoInput.value = record.memo || "";
@@ -1340,9 +1367,25 @@ cancelEditButton.addEventListener("click", cancelEditing);
 // タイマーの開始・終了ボタンを設定します。
 startTimerButton.addEventListener("click", startTimer);
 
-// 科目を入力したら、注意の表示を元に戻します。
+// 「＋ 科目を追加・編集する」を選んだら、設定画面を開きます。
+let lastSubjectValue = "";
+subjectInput.addEventListener("focus", () => {
+  lastSubjectValue = subjectInput.value;
+});
+subjectInput.addEventListener("change", () => {
+  if (subjectInput.value === manageSubjectsValue) {
+    subjectInput.value = lastSubjectValue;
+    fillStudySettings();
+    settingsDialog.showModal();
+    newSubjectName.focus();
+    return;
+  }
+  lastSubjectValue = subjectInput.value;
+});
+
+// 科目を選んだら、注意の表示を元に戻します。
 subjectInput.addEventListener("input", () => {
-  if (subjectInput.value.trim() && !activeTimer) {
+  if (subjectInput.value && subjectInput.value !== manageSubjectsValue && !activeTimer) {
     subjectInput.classList.remove("needs-input");
     timerStatus.classList.remove("is-warning");
     timerStatus.textContent = "開始を押すと計測が始まります";

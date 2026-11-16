@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Study Log</title>
   <!-- ?v= の数字は「版」です。更新したら数字を変えると、スマホでも新しいファイルが読み込まれます -->
-  <link rel="stylesheet" href="style.css?v=2026111603">
+  <link rel="stylesheet" href="style.css?v=2026111604">
 </head>
 <body>
   <main class="app">
@@ -66,7 +66,7 @@
       <div id="timerPanel" class="timer-panel">
         <div class="timer-copy">
           <p class="eyebrow">FOCUS TIMER</p>
-          <p id="timerStatus" class="timer-status" aria-live="polite">科目を入力して計測を開始</p>
+          <p id="timerStatus" class="timer-status" aria-live="polite">科目を選んで計測を開始</p>
         </div>
         <time id="timerDisplay" class="timer-display">00:00:00</time>
         <div class="timer-actions">
@@ -83,14 +83,10 @@
           </div>
           <div class="field field-subject">
             <label for="subjectInput">科目</label>
-            <input id="subjectInput" type="text" list="subjectOptions" maxlength="40" placeholder="例：JavaScript" required>
-            <datalist id="subjectOptions">
-              <option value="JavaScript"></option>
-              <option value="Excel"></option>
-              <option value="Spring"></option>
-              <option value="HTML/CSS"></option>
-              <option value="Python"></option>
-            </datalist>
+            <!-- 選択肢は、設定で登録した科目から JavaScript で作ります -->
+            <select id="subjectInput" required>
+              <option value="">科目を選んでください</option>
+            </select>
           </div>
           <div class="field field-duration">
             <label for="durationInput">学習時間</label>
@@ -353,6 +349,6 @@
       </section>
     </dialog>
   </main>
-  <script src="script.js?v=2026111603"></script>
+  <script src="script.js?v=2026111604"></script>
 </body>
 </html>

@@ -693,7 +693,8 @@ h1 {
   font-weight: 700;
 }
 
-.field input.needs-input {
+.field input.needs-input,
+.field select.needs-input {
   border-color: #b42318;
   outline: 2px solid rgba(180, 35, 24, 0.15);
 }
@@ -779,6 +780,33 @@ html[data-theme="night"] .timer-status.is-warning {
   line-height: 1.6;
 }
 
+/* 科目の選択欄：右はしに ▼ を付ける */
+.field select {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 34px 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23778b88' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* 何も選んでいないとき（「科目を選んでください」）は、うすい色にする */
+.field select:invalid {
+  color: var(--muted);
+}
+
+.field select:focus,
 .field input:focus,
 .field textarea:focus {
   outline: 2px solid rgba(82, 125, 125, 0.18);
@@ -1427,6 +1455,7 @@ html[data-theme="night"] .timer-status.is-warning {
 
   /* iPhone は文字が 16px より小さい欄をタップすると画面を拡大するので、16px にする */
   .field input,
+  .field select,
   .field textarea,
   .settings-fields select,
   .subject-settings-item input[type="text"],
@@ -1556,6 +1585,7 @@ html[data-theme="night"] .todo-item.is-done {
 }
 
 html[data-theme="night"] .field input,
+html[data-theme="night"] .field select,
 html[data-theme="night"] .field textarea,
 html[data-theme="night"] .goal-form .field input,
 html[data-theme="night"] .todo-form input,
