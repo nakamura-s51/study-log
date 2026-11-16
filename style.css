@@ -1345,11 +1345,35 @@ html[data-theme="night"] .timer-status.is-warning {
   border-color: var(--main);
 }
 
+/* 今週の目標「0時間 / 10時間」の表示 */
+.goal-summary-label {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.goal-summary-value {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-summary-value strong {
+  color: var(--main-dark);
+  font-size: 22px;
+}
+
 .goal-progress-copy p {
-  margin: 0 0 7px;
+  margin: 7px 0 0;
   color: var(--main-dark);
   font-size: 11px;
   font-weight: 600;
+}
+
+.goal-settings-button {
+  margin-top: 12px;
+  min-height: 34px;
 }
 
 .goal-progress {

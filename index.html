@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Study Log</title>
   <!-- ?v= の数字は「版」です。更新したら数字を変えると、スマホでも新しいファイルが読み込まれます -->
-  <link rel="stylesheet" href="style.css?v=2026111606">
+  <link rel="stylesheet" href="style.css?v=2026111701">
 </head>
 <body>
   <main class="app">
@@ -174,36 +174,19 @@
             <h2 id="goalTitle">目標と試験日</h2>
           </div>
         </div>
-        <form id="goalForm" class="goal-form">
-          <div class="field">
-            <label for="weeklyGoalInput">今週の目標時間</label>
-            <div class="duration-control">
-              <input id="weeklyGoalInput" type="number" min="1" max="168" step="0.5" required>
-              <span>時間</span>
-            </div>
-          </div>
+        <!-- 目標時間・試験名・試験日の入力は「設定」に移しました。ここでは進み具合だけを表示します -->
+        <div class="goal-summary">
+          <p class="goal-summary-label">今週の目標時間</p>
+          <p class="goal-summary-value"><strong id="weeklyGoalDone">0時間</strong> / <span id="weeklyGoalTotal">10時間</span></p>
           <div class="goal-progress-copy">
-            <p id="weeklyGoalText">目標まであと 10時間</p>
             <div id="goalProgress" class="goal-progress" role="progressbar" aria-label="今週の目標達成率" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <span id="goalProgressBar"></span>
             </div>
+            <p id="weeklyGoalText">目標まであと 10時間</p>
           </div>
-          <div class="goal-fields-row">
-            <div class="field">
-              <label for="examNameInput">試験名</label>
-              <input id="examNameInput" type="text" maxlength="40" placeholder="例：MOS">
-            </div>
-            <div class="field">
-              <label for="examDateInput">試験日</label>
-              <input id="examDateInput" type="date">
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="primary-button" type="submit">目標を保存</button>
-            <p id="goalMessage" class="form-message" aria-live="polite"></p>
-          </div>
-        </form>
+        </div>
         <p id="examCountdown" class="exam-countdown">試験日を登録するとカウントダウンします</p>
+        <button id="openGoalSettingsButton" class="secondary-button goal-settings-button" type="button">目標・試験日を変更する</button>
       </section>
 
       <section class="dashboard-module todo-module" aria-labelledby="todoTitle">
@@ -353,6 +336,6 @@
       </section>
     </dialog>
   </main>
-  <script src="script.js?v=2026111606"></script>
+  <script src="script.js?v=2026111701"></script>
 </body>
 </html>

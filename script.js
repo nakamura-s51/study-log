@@ -31,9 +31,6 @@ const exportCsvButton = document.getElementById("exportCsvButton");
 const clearDataButton = document.getElementById("clearDataButton");
 const settingsMessage = document.getElementById("settingsMessage");
 const dataMessage = document.getElementById("dataMessage");
-const weeklyGoalInput = document.getElementById("weeklyGoalInput");
-const examNameInput = document.getElementById("examNameInput");
-const examDateInput = document.getElementById("examDateInput");
 const todoForm = document.getElementById("todoForm");
 const todoInput = document.getElementById("todoInput");
 const todoList = document.getElementById("todoList");
@@ -194,9 +191,6 @@ try {
   goals = { weeklyHours: 10, examName: "", examDate: "" };
   todos = [];
 }
-weeklyGoalInput.value = String(goals.weeklyHours);
-examNameInput.value = goals.examName || "";
-examDateInput.value = goals.examDate || "";
 
 // 編集中の記録IDです。何も編集していないときはnullです。
 let editingId = null;
@@ -425,9 +419,6 @@ settingsForm.addEventListener("submit", (event) => {
     examDate: settingsExamDateInput.value
   };
   localStorage.setItem(goalStorageKey, JSON.stringify(goals));
-  weeklyGoalInput.value = String(goals.weeklyHours);
-  examNameInput.value = goals.examName;
-  examDateInput.value = goals.examDate;
 
   if (recordsChanged) {
     saveRecords();
@@ -979,9 +970,12 @@ function renderGoalProgress() {
   const goalMinutes = goals.weeklyHours * 60;
   const remainingMinutes = Math.max(0, goalMinutes - weekMinutes);
   const progress = goalMinutes > 0 ? Math.min(100, Math.round((weekMinutes / goalMinutes) * 100)) : 0;
+  // 「0時間 / 10時間」の形で、今週の分と目標を並べます。
+  document.getElementById("weeklyGoalDone").textContent = formatDuration(weekMinutes);
+  document.getElementById("weeklyGoalTotal").textContent = formatDuration(goalMinutes);
   const goalText = document.getElementById("weeklyGoalText");
   goalText.textContent = remainingMinutes > 0
-    ? `今週の目標 ${formatDuration(goalMinutes)}まで あと ${formatDuration(remainingMinutes)}`
+    ? `あと ${formatDuration(remainingMinutes)}（${progress}%）`
     : "今週の目標を達成しました！";
 
   const progressBar = document.getElementById("goalProgress");
@@ -990,7 +984,7 @@ function renderGoalProgress() {
 
   const countdown = document.getElementById("examCountdown");
   if (!goals.examDate) {
-    countdown.textContent = "試験日を登録するとカウントダウンします";
+    countdown.textContent = "試験日を設定すると、ここでカウントダウンします";
     return;
   }
 
@@ -1482,17 +1476,11 @@ memoInput.addEventListener("input", () => {
   }
 });
 
-// 今週の目標時間と試験日を保存します。
-document.getElementById("goalForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  goals = {
-    weeklyHours: Number(weeklyGoalInput.value),
-    examName: examNameInput.value.trim(),
-    examDate: examDateInput.value
-  };
-  localStorage.setItem(goalStorageKey, JSON.stringify(goals));
-  renderGoalProgress();
-  document.getElementById("goalMessage").textContent = "目標を保存しました";
+// 「目標・試験日を変更する」ボタンで、設定画面の「学習」を開きます。
+document.getElementById("openGoalSettingsButton").addEventListener("click", () => {
+  fillStudySettings();
+  settingsDialog.showModal();
+  settingsWeeklyGoalInput.focus();
 });
 
 // ToDoを追加します。
