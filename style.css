@@ -133,12 +133,15 @@ button {
 }
 
 .page-header {
+  /* 設定ボタンを右上に置くための基準にする */
+  position: relative;
   padding-bottom: 21px;
   border-bottom: 1px solid var(--line);
 }
 
 .header-tools {
   display: flex;
+  align-self: flex-end;
   align-items: center;
   gap: 16px;
 }
@@ -163,6 +166,10 @@ button {
 }
 
 .settings-button {
+  /* ヘッダーの右上に固定する */
+  position: absolute;
+  top: 0;
+  right: 0;
   display: inline-flex;
   min-height: 34px;
   align-items: center;
@@ -1286,7 +1293,7 @@ h1 {
 
   .header-tools {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
   }
 
   .timer-panel {
