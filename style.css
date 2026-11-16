@@ -687,6 +687,21 @@ h1 {
   font-size: 11px;
 }
 
+/* 科目が入っていないときの注意（赤い文字と、赤い枠） */
+.timer-status.is-warning {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.field input.needs-input {
+  border-color: #b42318;
+  outline: 2px solid rgba(180, 35, 24, 0.15);
+}
+
+html[data-theme="night"] .timer-status.is-warning {
+  color: #ff9b8f;
+}
+
 .timer-display {
   color: var(--main-dark);
   font-family: "Avenir Next", "Hiragino Sans", "Yu Gothic", sans-serif;

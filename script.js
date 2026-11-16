@@ -619,14 +619,20 @@ function completeTimerPhase() {
 function startTimer() {
   const subject = subjectInput.value.trim();
   if (!subject) {
-    formMessage.textContent = "タイマーを始める前に科目を入力してください";
+    // メッセージは画面の下のほうだと見えないので、タイマーの中に表示します。
+    timerStatus.textContent = "先に下の「科目」を入力してください";
+    timerStatus.classList.add("is-warning");
+    subjectInput.classList.add("needs-input");
     subjectInput.focus();
     return;
   }
   if (editingId) {
-    formMessage.textContent = "記録の編集中はタイマーを開始できません";
+    timerStatus.textContent = "記録の編集中はタイマーを開始できません";
+    timerStatus.classList.add("is-warning");
     return;
   }
+  timerStatus.classList.remove("is-warning");
+  subjectInput.classList.remove("needs-input");
 
   activeTimer = {
     startedAt: Date.now(),
@@ -1333,6 +1339,15 @@ cancelEditButton.addEventListener("click", cancelEditing);
 
 // タイマーの開始・終了ボタンを設定します。
 startTimerButton.addEventListener("click", startTimer);
+
+// 科目を入力したら、注意の表示を元に戻します。
+subjectInput.addEventListener("input", () => {
+  if (subjectInput.value.trim() && !activeTimer) {
+    subjectInput.classList.remove("needs-input");
+    timerStatus.classList.remove("is-warning");
+    timerStatus.textContent = "開始を押すと計測が始まります";
+  }
+});
 stopTimerButton.addEventListener("click", stopTimer);
 
 // 計測中に入力したメモを一時保存し、再読み込み後にも残します。
