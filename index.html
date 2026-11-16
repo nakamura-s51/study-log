@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="ocean">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Log</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">STUDY TRACKER</p>
+        <h1>Study Log</h1>
+        <p class="note">学んだ時間と内容を記録しよう</p>
+      </div>
+      <div class="header-tools">
+        <button id="openSettingsButton" class="settings-button" type="button" aria-haspopup="dialog">
+          <span aria-hidden="true">⚙</span> 設定
+        </button>
+        <p class="storage-note"><span aria-hidden="true"></span>このブラウザーに保存</p>
+      </div>
+    </header>
+
+    <nav class="dashboard-nav" aria-label="ページ内ナビゲーション">
+      <a href="#recordEntry">記録</a>
+      <a href="#insights">学習状況</a>
+      <a href="#planning">目標・ToDo</a>
+      <a href="#records">一覧</a>
+    </nav>
+
+    <section class="summary-grid" aria-label="学習時間の合計と連続記録">
+      <article class="summary-item summary-today">
+        <p class="summary-label">今日</p>
+        <p id="todayTotal" class="summary-value">0時間</p>
+      </article>
+      <article class="summary-item summary-week">
+        <p class="summary-label">今週 <span>月曜から今日まで</span></p>
+        <p id="weekTotal" class="summary-value">0時間</p>
+      </article>
+      <article class="summary-item summary-month">
+        <p class="summary-label">今月</p>
+        <p id="monthTotal" class="summary-value">0時間</p>
+      </article>
+      <article class="summary-item summary-streak">
+        <p class="summary-label">連続記録</p>
+        <p id="streakValue" class="summary-value">🔥 0日</p>
+        <p id="streakMessage" class="streak-message">今日から記録を始めよう</p>
+      </article>
+    </section>
+
+    <section id="recordEntry" class="entry-section" data-dashboard-block="recordEntry" aria-labelledby="formTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">NEW SESSION</p>
+          <h2 id="formTitle">学習を記録</h2>
+        </div>
+        <div class="block-order-controls" role="group" aria-label="記録ブロックの順番">
+          <button type="button" data-move-block="recordEntry" data-move-direction="up" aria-label="記録ブロックを上へ">↑</button>
+          <button type="button" data-move-block="recordEntry" data-move-direction="down" aria-label="記録ブロックを下へ">↓</button>
+        </div>
+      </div>
+
+      <div id="timerPanel" class="timer-panel">
+        <div class="timer-copy">
+          <p class="eyebrow">FOCUS TIMER</p>
+          <p id="timerStatus" class="timer-status" aria-live="polite">科目を入力して計測を開始</p>
+        </div>
+        <time id="timerDisplay" class="timer-display">00:00:00</time>
+        <div class="timer-actions">
+          <button id="startTimerButton" class="secondary-button" type="button">開始</button>
+          <button id="stopTimerButton" class="primary-button" type="button" hidden>終了して記録</button>
+        </div>
+      </div>
+
+      <form id="studyForm" class="study-form">
+        <div class="form-row">
+          <div class="field field-date">
+            <label for="dateInput">日付</label>
+            <input id="dateInput" type="date" required>
+          </div>
+          <div class="field field-subject">
+            <label for="subjectInput">科目</label>
+            <input id="subjectInput" type="text" list="subjectOptions" maxlength="40" placeholder="例：JavaScript" required>
+            <datalist id="subjectOptions">
+              <option value="JavaScript"></option>
+              <option value="Excel"></option>
+              <option value="Spring"></option>
+              <option value="HTML/CSS"></option>
+              <option value="Python"></option>
+            </datalist>
+          </div>
+          <div class="field field-duration">
+            <label for="durationInput">学習時間</label>
+            <div class="duration-control">
+              <input id="durationInput" type="number" min="0.25" max="24" step="0.25" placeholder="1.5" required>
+              <span>時間</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field field-memo">
+          <label for="memoInput">内容のメモ <span>任意</span></label>
+          <textarea id="memoInput" rows="3" maxlength="500" placeholder="学んだこと、次に復習したいことなど"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button id="submitButton" class="primary-button" type="submit">記録を追加</button>
+          <button id="cancelEditButton" class="secondary-button" type="button" hidden>編集をやめる</button>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section id="insights" class="insights-grid" data-dashboard-block="insights" aria-label="学習状況">
+      <div class="block-heading">
+        <div>
+          <p class="eyebrow">OVERVIEW</p>
+          <h2>学習状況</h2>
+        </div>
+        <div class="block-order-controls" role="group" aria-label="学習状況ブロックの順番">
+          <button type="button" data-move-block="insights" data-move-direction="up" aria-label="学習状況ブロックを上へ">↑</button>
+          <button type="button" data-move-block="insights" data-move-direction="down" aria-label="学習状況ブロックを下へ">↓</button>
+        </div>
+      </div>
+      <section class="dashboard-module" aria-labelledby="subjectChartTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">SUBJECT BREAKDOWN</p>
+            <h2 id="subjectChartTitle">科目ごとの学習時間</h2>
+          </div>
+        </div>
+        <p id="subjectChartEmpty" class="module-empty">記録すると科目ごとの時間が表示されます</p>
+        <div id="subjectChart" class="subject-chart" aria-label="科目ごとの学習時間グラフ"></div>
+      </section>
+
+      <section id="calendarSection" class="dashboard-module calendar-module" aria-labelledby="calendarTitle">
+        <div class="calendar-heading">
+          <div>
+            <p class="eyebrow">STUDY CALENDAR</p>
+            <h2 id="calendarTitle">学習カレンダー</h2>
+          </div>
+          <div class="calendar-controls">
+            <button id="previousMonth" type="button" aria-label="前の月">‹</button>
+            <strong id="calendarMonthLabel"></strong>
+            <button id="nextMonth" type="button" aria-label="次の月">›</button>
+          </div>
+        </div>
+        <div class="weekday-row" aria-hidden="true">
+          <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        </div>
+        <div id="calendarGrid" class="calendar-grid" aria-label="学習日カレンダー"></div>
+        <p class="calendar-legend"><span></span>学習した日</p>
+      </section>
+    </section>
+
+    <section id="planning" class="planning-grid" data-dashboard-block="planning" aria-label="学習計画">
+      <div class="block-heading">
+        <div>
+          <p class="eyebrow">PLAN</p>
+          <h2>目標とToDo</h2>
+        </div>
+        <div class="block-order-controls" role="group" aria-label="計画ブロックの順番">
+          <button type="button" data-move-block="planning" data-move-direction="up" aria-label="計画ブロックを上へ">↑</button>
+          <button type="button" data-move-block="planning" data-move-direction="down" aria-label="計画ブロックを下へ">↓</button>
+        </div>
+      </div>
+      <section class="dashboard-module" aria-labelledby="goalTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">GOALS & EXAM</p>
+            <h2 id="goalTitle">目標と試験日</h2>
+          </div>
+        </div>
+        <form id="goalForm" class="goal-form">
+          <div class="field">
+            <label for="weeklyGoalInput">今週の目標時間</label>
+            <div class="duration-control">
+              <input id="weeklyGoalInput" type="number" min="1" max="168" step="0.5" required>
+              <span>時間</span>
+            </div>
+          </div>
+          <div class="goal-progress-copy">
+            <p id="weeklyGoalText">目標まであと 10時間</p>
+            <div id="goalProgress" class="goal-progress" role="progressbar" aria-label="今週の目標達成率" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="goalProgressBar"></span>
+            </div>
+          </div>
+          <div class="goal-fields-row">
+            <div class="field">
+              <label for="examNameInput">試験名</label>
+              <input id="examNameInput" type="text" maxlength="40" placeholder="例：MOS">
+            </div>
+            <div class="field">
+              <label for="examDateInput">試験日</label>
+              <input id="examDateInput" type="date">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="primary-button" type="submit">目標を保存</button>
+            <p id="goalMessage" class="form-message" aria-live="polite"></p>
+          </div>
+        </form>
+        <p id="examCountdown" class="exam-countdown">試験日を登録するとカウントダウンします</p>
+      </section>
+
+      <section class="dashboard-module todo-module" aria-labelledby="todoTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">NEXT STEPS</p>
+            <h2 id="todoTitle">やることリスト</h2>
+          </div>
+          <p id="todoCount" class="record-count">0件</p>
+        </div>
+        <form id="todoForm" class="todo-form">
+          <label class="visually-hidden" for="todoInput">やること</label>
+          <input id="todoInput" type="text" maxlength="100" placeholder="例：模擬試験1回目" required>
+          <button class="primary-button" type="submit" aria-label="やることを追加">追加</button>
+        </form>
+        <p id="todoEmptyMessage" class="module-empty">やることを追加してみよう</p>
+        <ul id="todoList" class="todo-list" aria-label="やることリスト"></ul>
+      </section>
+    </section>
+
+    <section id="records" class="records-section" data-dashboard-block="records" aria-labelledby="recordsTitle">
+      <div class="section-heading records-heading">
+        <div>
+          <p class="eyebrow">YOUR SESSIONS</p>
+          <h2 id="recordsTitle">学習記録一覧</h2>
+        </div>
+        <div class="records-tools">
+          <p id="recordCount" class="record-count">0件</p>
+          <div class="block-order-controls" role="group" aria-label="一覧ブロックの順番">
+            <button type="button" data-move-block="records" data-move-direction="up" aria-label="一覧ブロックを上へ">↑</button>
+            <button type="button" data-move-block="records" data-move-direction="down" aria-label="一覧ブロックを下へ">↓</button>
+          </div>
+        </div>
+      </div>
+      <p id="emptyMessage" class="empty-message">まだ記録はありません</p>
+      <ul id="recordList" class="record-list" aria-label="学習記録一覧"></ul>
+    </section>
+
+    <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
+      <div class="settings-header">
+        <div>
+          <p class="eyebrow">PREFERENCES</p>
+          <h2 id="settingsTitle">設定</h2>
+        </div>
+        <button id="closeSettingsButton" class="settings-close" type="button" aria-label="設定を閉じる">×</button>
+      </div>
+
+      <form id="settingsForm" class="settings-form">
+        <section class="settings-group" aria-labelledby="timerSettingsTitle">
+          <h3 id="timerSettingsTitle">タイマー</h3>
+          <div class="settings-fields timer-settings-fields">
+            <div class="field">
+              <label for="focusMinutesInput">集中時間</label>
+              <div class="settings-number"><input id="focusMinutesInput" type="number" min="1" max="180" step="1" required><span>分</span></div>
+            </div>
+            <div class="field">
+              <label for="breakMinutesInput">休憩時間</label>
+              <div class="settings-number"><input id="breakMinutesInput" type="number" min="1" max="60" step="1" required><span>分</span></div>
+            </div>
+            <label class="settings-toggle" for="timerSoundInput">
+              <input id="timerSoundInput" type="checkbox">
+              <span>終了時に音を鳴らす</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="settings-group" aria-labelledby="appearanceSettingsTitle">
+          <h3 id="appearanceSettingsTitle">見た目</h3>
+          <div class="settings-fields appearance-fields">
+            <div class="field">
+              <label for="themeSelect">テーマ</label>
+              <select id="themeSelect">
+                <option value="ocean">ライト</option>
+                <option value="sage">セージ</option>
+                <option value="night">ダーク</option>
+                <option value="system">スマホに合わせる</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="textSizeSelect">文字の大きさ</label>
+              <select id="textSizeSelect">
+                <option value="small">小</option>
+                <option value="medium">中</option>
+                <option value="large">大</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <div class="settings-actions">
+          <button class="primary-button" type="submit">設定を保存</button>
+          <p id="settingsMessage" class="form-message" aria-live="polite"></p>
+        </div>
+      </form>
+
+      <section class="settings-group data-settings" aria-labelledby="dataSettingsTitle">
+        <h3 id="dataSettingsTitle">データ管理</h3>
+        <p class="settings-help">バックアップを使って、別の端末へ記録を移せます。</p>
+        <div class="data-actions">
+          <button id="exportJsonButton" class="secondary-button" type="button">JSONを書き出す</button>
+          <button id="exportCsvButton" class="secondary-button" type="button">CSVを書き出す</button>
+          <label class="secondary-button import-button" for="backupFileInput">ファイルから復元</label>
+          <input id="backupFileInput" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+        </div>
+        <p id="dataMessage" class="form-message" aria-live="polite"></p>
+        <button id="clearDataButton" class="clear-data-button" type="button">すべてのデータを初期化</button>
+      </section>
+    </dialog>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
