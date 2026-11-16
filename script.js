@@ -53,6 +53,7 @@ const newSubjectColor = document.getElementById("newSubjectColor");
 const newSubjectName = document.getElementById("newSubjectName");
 const addSubjectButton = document.getElementById("addSubjectButton");
 const subjectMessage = document.getElementById("subjectMessage");
+const timerModeInputs = document.querySelectorAll('input[name="timerMode"]');
 
 // 重ならない ID を作ります（科目や ToDo で使います）。
 function makeId() {
@@ -104,7 +105,8 @@ let settings = {
   textSize: "medium",
   dailyGoalMinutes: 60,
   weekStart: "monday",
-  subjects: null
+  subjects: null,
+  timerMode: "alarm"
 };
 try {
   const savedSettings = JSON.parse(localStorage.getItem(settingsStorageKey));
@@ -127,6 +129,7 @@ function normalizeStudySettings() {
   const dailyGoal = Number(settings.dailyGoalMinutes);
   settings.dailyGoalMinutes = Number.isFinite(dailyGoal) ? Math.min(1440, Math.max(0, Math.round(dailyGoal))) : 60;
   settings.weekStart = settings.weekStart === "sunday" ? "sunday" : "monday";
+  settings.timerMode = settings.timerMode === "stopwatch" ? "stopwatch" : "alarm";
   settings.subjects = normalizeSubjects(settings.subjects)
     || defaultSubjects.map((subject) => ({ ...subject, id: makeId() }));
 }
@@ -408,6 +411,7 @@ settingsForm.addEventListener("submit", (event) => {
     textSize: textSizeSelect.value,
     dailyGoalMinutes: Number(dailyGoalInput.value),
     weekStart: weekStartSelect.value,
+    timerMode: settings.timerMode,
     subjects: draftSubjects.map((subject) => ({ ...subject, name: subject.name.trim() }))
   };
   normalizeStudySettings();
@@ -432,6 +436,9 @@ settingsForm.addEventListener("submit", (event) => {
   applyTextSize(settings.textSize);
   renderSubjectOptions();
   renderRecords();
+  if (!activeTimer) {
+    renderTimerDisplay();
+  }
   settingsMessage.textContent = "設定を保存しました";
   settingsDialog.close();
 });
@@ -498,10 +505,27 @@ document.querySelectorAll("[data-move-block]").forEach((button) => {
   });
 });
 
-// 経過した秒数を「時:分:秒」の形で表示します。
+// 秒数を「時:分:秒」の文字にします。
+function formatClock(totalSeconds) {
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+// タイマーの表示を更新します。
+// 「測るだけ」は 0 から増えていき、「時間で知らせる」は設定の時間から減っていきます。
 function renderTimerDisplay() {
   if (!activeTimer) {
-    timerDisplay.textContent = "00:00:00";
+    timerDisplay.textContent = settings.timerMode === "stopwatch"
+      ? "00:00:00"
+      : `${String(settings.focusMinutes).padStart(2, "0")}:00`;
+    return;
+  }
+
+  if (activeTimer.mode === "stopwatch") {
+    const elapsed = Math.max(0, Math.floor((Date.now() - activeTimer.startedAt) / 1000));
+    timerDisplay.textContent = formatClock(elapsed);
     return;
   }
 
@@ -527,12 +551,20 @@ function setTimerRunning(isRunning) {
   submitButton.disabled = isRunning;
   startTimerButton.disabled = isRunning;
   stopTimerButton.hidden = !isRunning;
-  timerStatus.textContent = isRunning
-    ? activeTimer.phase === "break" ? "休憩中" : `${activeTimer.subject}を集中計測中`
-    : "科目を選んで計測を開始";
-  if (isRunning) {
-    stopTimerButton.textContent = activeTimer.phase === "break" ? "休憩を終了" : "集中を終了して記録";
+  timerModeInputs.forEach((input) => {
+    input.disabled = isRunning;
+  });
+  if (!isRunning) {
+    timerStatus.textContent = "科目を選んで計測を開始";
+    return;
   }
+  if (activeTimer.mode === "stopwatch") {
+    timerStatus.textContent = `${activeTimer.subject}を計測中`;
+    stopTimerButton.textContent = "終了して記録";
+    return;
+  }
+  timerStatus.textContent = activeTimer.phase === "break" ? "休憩中" : `${activeTimer.subject}を集中計測中`;
+  stopTimerButton.textContent = activeTimer.phase === "break" ? "休憩を終了" : "集中を終了して記録";
 }
 
 // タイマー終了音が設定されているときだけ、短い音を鳴らします。
@@ -540,24 +572,46 @@ function playTimerSound() {
   if (!settings.soundEnabled) {
     return;
   }
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) {
+  const audioContext = getAudioContext();
+  if (!audioContext) {
     return;
   }
 
-  const audioContext = new AudioContextClass();
-  const oscillator = audioContext.createOscillator();
-  const volume = audioContext.createGain();
-  oscillator.type = "sine";
-  oscillator.frequency.value = 660;
-  volume.gain.setValueAtTime(0.0001, audioContext.currentTime);
-  volume.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.02);
-  volume.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
-  oscillator.connect(volume);
-  volume.connect(audioContext.destination);
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + 0.36);
-  oscillator.addEventListener("ended", () => audioContext.close());
+  // 「ピッ、ピッ、ピッ」と3回鳴らします。
+  [0, 0.5, 1].forEach((delay) => {
+    const startAt = audioContext.currentTime + delay;
+    const oscillator = audioContext.createOscillator();
+    const volume = audioContext.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    volume.gain.setValueAtTime(0.0001, startAt);
+    volume.gain.exponentialRampToValueAtTime(0.2, startAt + 0.02);
+    volume.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.3);
+    oscillator.connect(volume);
+    volume.connect(audioContext.destination);
+    oscillator.start(startAt);
+    oscillator.stop(startAt + 0.32);
+  });
+  if (navigator.vibrate) {
+    navigator.vibrate([200, 100, 200]);
+  }
+}
+
+// 音を鳴らすための部品を1つだけ作って使い回します。
+// iPhone は「ボタンを押したとき」に準備しておかないと、あとで音が鳴らないため、開始ボタンで準備します。
+let sharedAudioContext = null;
+function getAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    return null;
+  }
+  if (!sharedAudioContext) {
+    sharedAudioContext = new AudioContextClass();
+  }
+  if (sharedAudioContext.state === "suspended") {
+    sharedAudioContext.resume();
+  }
+  return sharedAudioContext;
 }
 
 // 集中時間を、通常の学習記録として保存します。
@@ -634,7 +688,12 @@ function startTimer() {
   timerStatus.classList.remove("is-warning");
   subjectInput.classList.remove("needs-input");
 
+  if (settings.timerMode === "alarm" && settings.soundEnabled) {
+    getAudioContext();
+  }
+
   activeTimer = {
+    mode: settings.timerMode,
     startedAt: Date.now(),
     phaseStartedAt: Date.now(),
     phase: "focus",
@@ -649,6 +708,9 @@ function startTimer() {
   renderTimerDisplay();
   timerInterval = window.setInterval(renderTimerDisplay, 1000);
   formMessage.textContent = "計測を開始しました";
+  if (activeTimer.mode === "alarm" && !settings.soundEnabled) {
+    timerStatus.textContent = `${subject}を集中計測中（音は設定でオンにできます）`;
+  }
 }
 
 // 集中を手動終了するか、休憩をスキップします。
@@ -657,11 +719,10 @@ function stopTimer() {
     return;
   }
 
-  if (activeTimer.phase === "focus") {
+  if (activeTimer.mode === "stopwatch" || activeTimer.phase === "focus") {
     const elapsedMinutes = Math.round((Date.now() - activeTimer.phaseStartedAt) / 60000);
     const subject = activeTimer.subject;
     saveTimerRecord(elapsedMinutes);
-    playTimerSound();
     finishTimerSession(`${subject}の学習を記録しました`);
     formMessage.textContent = `${subject}を${formatDuration(Math.max(1, elapsedMinutes))}で記録しました`;
     return;
@@ -678,6 +739,9 @@ function restoreTimer() {
     return;
   }
 
+  if (activeTimer.mode !== "stopwatch") {
+    activeTimer.mode = "alarm";
+  }
   if (!activeTimer.phase) {
     activeTimer.phase = "focus";
     activeTimer.phaseStartedAt = activeTimer.startedAt;
@@ -1367,6 +1431,23 @@ cancelEditButton.addEventListener("click", cancelEditing);
 // タイマーの開始・終了ボタンを設定します。
 startTimerButton.addEventListener("click", startTimer);
 
+// タイマーの使い方（測るだけ / 時間で知らせる）を切り替えて、保存します。
+timerModeInputs.forEach((input) => {
+  input.checked = input.value === settings.timerMode;
+  input.addEventListener("change", () => {
+    if (activeTimer) {
+      return;
+    }
+    settings.timerMode = input.value;
+    localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
+    renderTimerDisplay();
+    timerStatus.classList.remove("is-warning");
+    timerStatus.textContent = settings.timerMode === "stopwatch"
+      ? "0 から時間を測ります（止めるまで続きます）"
+      : `${settings.focusMinutes}分たったら知らせます`;
+  });
+});
+
 // 「＋ 科目を追加・編集する」を選んだら、設定画面を開きます。
 let lastSubjectValue = "";
 subjectInput.addEventListener("focus", () => {
@@ -1449,3 +1530,4 @@ renderSubjectOptions();
 renderTodos();
 renderRecords();
 restoreTimer();
+renderTimerDisplay();

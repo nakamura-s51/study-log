@@ -703,6 +703,52 @@ html[data-theme="night"] .timer-status.is-warning {
   color: #ff9b8f;
 }
 
+/* タイマーの使い方（測るだけ / 時間で知らせる）を選ぶボタン */
+.timer-mode {
+  display: inline-flex;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--input-surface);
+}
+
+.timer-mode label {
+  position: relative;
+  cursor: pointer;
+}
+
+/* 丸いラジオボタン自体は見えなくして、文字の部分をボタンのように見せる */
+.timer-mode input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.timer-mode span {
+  display: block;
+  padding: 5px 11px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.timer-mode input:checked + span {
+  background: var(--main-dark);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.timer-mode input:focus-visible + span {
+  outline: 2px solid var(--main);
+  outline-offset: -2px;
+}
+
+.timer-mode input:disabled + span {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .timer-display {
   color: var(--main-dark);
   font-family: "Avenir Next", "Hiragino Sans", "Yu Gothic", sans-serif;
