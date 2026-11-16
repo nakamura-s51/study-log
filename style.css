@@ -329,8 +329,9 @@ button {
   font-size: 12px;
 }
 
-.settings-help-after {
-  margin: 10px 0 0;
+/* 入力欄の下に置く説明文。.settings-help のマイナスの余白（上に詰める）を打ち消すため、クラスを2つ重ねて強くしています */
+.settings-help.settings-help-after {
+  margin: 12px 0 0;
 }
 
 .settings-subtitle {
@@ -1503,6 +1504,7 @@ html[data-theme="night"] .timer-status.is-warning {
   .field input,
   .field select,
   .field textarea,
+  .settings-fields .field > input,
   .settings-fields select,
   .subject-settings-item input[type="text"],
   .subject-add-row input[type="text"] {
